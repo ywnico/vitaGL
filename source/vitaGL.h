@@ -679,6 +679,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 void glTexParameterf(GLenum target, GLenum pname, GLfloat param);
 void glTexParameteri(GLenum target, GLenum pname, GLint param);
 void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
+void glTexSubImage2DUnpackRow(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels, GLint unpack_row_length);
 void glTranslatef(GLfloat x, GLfloat y, GLfloat z);
 void glTranslatex(GLfixed x, GLfixed y, GLfixed z);
 void glUniform1f(GLint location, GLfloat v0);

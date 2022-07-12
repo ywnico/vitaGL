@@ -792,6 +792,221 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 	}
 }
 
+void glTexSubImage2DUnpackRow(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels, GLint unpack_row_length) {
+	// Setting some aliases to make code more readable
+	texture_unit *tex_unit = &texture_units[server_texture_unit];
+	int texture2d_idx = tex_unit->tex_id;
+	texture *target_texture = &texture_slots[texture2d_idx];
+
+#ifdef HAVE_UNPURE_TEXTURES
+	level -= target_texture->mip_start;
+#endif
+
+	// Calculating implicit texture stride and start address of requested texture modification
+	uint32_t orig_w = sceGxmTextureGetWidth(&target_texture->gxm_tex);
+	uint32_t orig_h = sceGxmTextureGetHeight(&target_texture->gxm_tex);
+	SceGxmTextureFormat tex_format = sceGxmTextureGetFormat(&target_texture->gxm_tex);
+	uint8_t bpp = tex_format_to_bytespp(tex_format);
+	uint32_t stride = unpack_row_length * bpp; //ALIGN(orig_w, 8) * bpp; // TODO: sould this be multiplied by bpp?????
+	uint8_t *ptr = (uint8_t *)target_texture->data + xoffset * bpp + yoffset * stride;
+	uint8_t *ptr_line = ptr;
+	uint8_t data_bpp = 0;
+	int i, j;
+	GLboolean fast_store = GL_FALSE;
+
+#ifndef SKIP_ERROR_HANDLING
+	if (xoffset + width > orig_w) {
+		SET_GL_ERROR(GL_INVALID_VALUE)
+	} else if (yoffset + height > orig_h) {
+		SET_GL_ERROR(GL_INVALID_VALUE)
+	}
+#endif
+
+	// Support for legacy GL1.0 format
+	switch (format) {
+	case 1:
+		format = GL_RED;
+		break;
+	case 2:
+		format = GL_RG;
+		break;
+	case 3:
+		format = GL_RGB;
+		break;
+	case 4:
+		format = GL_RGBA;
+		break;
+	}
+
+	/*
+	 * Callbacks are actually used to just perform down/up-sampling
+	 * between U8 texture formats. Reads are expected to give as result
+	 * a RGBA sample that will be wrote depending on texture format
+	 * by the write callback
+	 */
+	void (*write_cb)(void *, uint32_t) = NULL;
+	uint32_t (*read_cb)(void *) = NULL;
+
+	// Detecting proper read callback and source bpp
+	switch (format) {
+	case GL_RED:
+	case GL_ALPHA:
+		switch (type) {
+		case GL_UNSIGNED_BYTE:
+			read_cb = readR;
+			data_bpp = 1;
+			break;
+		default:
+			SET_GL_ERROR_WITH_VALUE(GL_INVALID_ENUM, type)
+		}
+		break;
+	case GL_RG:
+		switch (type) {
+		case GL_UNSIGNED_BYTE:
+			read_cb = readRG;
+			data_bpp = 2;
+			break;
+		default:
+			SET_GL_ERROR_WITH_VALUE(GL_INVALID_ENUM, type)
+		}
+		break;
+	case GL_RGB:
+		switch (type) {
+		case GL_UNSIGNED_BYTE:
+			data_bpp = 3;
+			read_cb = readRGB;
+			break;
+		case GL_UNSIGNED_SHORT_5_6_5:
+			data_bpp = 2;
+			read_cb = readRGB565;
+			break;
+		default:
+			SET_GL_ERROR_WITH_VALUE(GL_INVALID_ENUM, type)
+		}
+		break;
+	case GL_BGR:
+		switch (type) {
+		case GL_UNSIGNED_BYTE:
+			data_bpp = 3;
+			read_cb = readBGR;
+			break;
+		default:
+			SET_GL_ERROR_WITH_VALUE(GL_INVALID_ENUM, type)
+		}
+		break;
+	case GL_RGBA:
+		switch (type) {
+		case GL_UNSIGNED_BYTE:
+			data_bpp = 4;
+			read_cb = readRGBA;
+			break;
+		case GL_UNSIGNED_SHORT_5_5_5_1:
+			data_bpp = 2;
+			read_cb = readRGBA5551;
+			break;
+		case GL_UNSIGNED_SHORT_4_4_4_4:
+			data_bpp = 2;
+			read_cb = readRGBA4444;
+			break;
+		default:
+			SET_GL_ERROR_WITH_VALUE(GL_INVALID_ENUM, type)
+		}
+		break;
+	case GL_BGRA:
+		switch (type) {
+		case GL_UNSIGNED_BYTE:
+			data_bpp = 4;
+			read_cb = readBGRA;
+			break;
+		default:
+			SET_GL_ERROR_WITH_VALUE(GL_INVALID_ENUM, type)
+		}
+		break;
+	default:
+		SET_GL_ERROR_WITH_VALUE(GL_INVALID_VALUE, format)
+		break;
+	}
+
+	switch (target) {
+	case GL_TEXTURE_2D:
+
+		// Detecting proper write callback
+		switch (tex_format) {
+		case SCE_GXM_TEXTURE_FORMAT_U8U8U8_BGR:
+			if (read_cb == readRGB)
+				fast_store = GL_TRUE;
+			else
+				write_cb = writeRGB;
+			break;
+		case SCE_GXM_TEXTURE_FORMAT_U8U8U8_RGB:
+			if (read_cb == readBGR)
+				fast_store = GL_TRUE;
+			else
+				write_cb = writeBGR;
+			break;
+		case SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR:
+			if (read_cb == readRGBA)
+				fast_store = GL_TRUE;
+			else
+				write_cb = writeRGBA;
+			break;
+		case SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ARGB:
+			if (read_cb == readBGRA)
+				fast_store = GL_TRUE;
+			else
+				write_cb = writeBGRA;
+			break;
+		case SCE_GXM_TEXTURE_FORMAT_L8:
+		case SCE_GXM_TEXTURE_FORMAT_U8_RRRR:
+		case SCE_GXM_TEXTURE_FORMAT_A8:
+		case SCE_GXM_TEXTURE_FORMAT_P8_ABGR:
+			if (read_cb == readR)
+				fast_store = GL_TRUE;
+			else
+				write_cb = writeR;
+			break;
+		case SCE_GXM_TEXTURE_FORMAT_A8L8:
+			if (read_cb == readRG)
+				fast_store = GL_TRUE;
+			else
+				write_cb = writeRG;
+			break;
+		// From here, we assume we're always in fast_store trunk (Not 100% accurate)
+		case SCE_GXM_TEXTURE_FORMAT_U5U6U5_RGB:
+		case SCE_GXM_TEXTURE_FORMAT_U4U4U4U4_RGBA:
+		case SCE_GXM_TEXTURE_FORMAT_U5U5U5U1_RGBA:
+			fast_store = GL_TRUE;
+			break;
+		}
+
+		if (fast_store) { // Internal format and input format are the same, we can take advantage of this
+			uint8_t *data = (uint8_t *)pixels;
+			uint32_t line_size = width * data_bpp;
+			for (i = 0; i < height; i++) {
+				vgl_fast_memcpy(ptr, data, line_size);
+				data += line_size;
+				ptr += stride;
+			}
+		} else { // Executing texture modification via callbacks
+			uint8_t *data = (uint8_t *)pixels;
+			for (i = 0; i < height; i++) {
+				for (j = 0; j < width; j++) {
+					uint32_t clr = read_cb((uint8_t *)data);
+					write_cb(ptr, clr);
+					data += data_bpp;
+					ptr += bpp;
+				}
+				ptr = ptr_line + stride;
+				ptr_line = ptr;
+			}
+		}
+
+		break;
+	default:
+		SET_GL_ERROR_WITH_VALUE(GL_INVALID_ENUM, target)
+	}
+}
+
 void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data) {
 	// Setting some aliases to make code more readable
 	texture_unit *tex_unit = &texture_units[server_texture_unit];

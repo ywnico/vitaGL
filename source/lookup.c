@@ -206,6 +206,7 @@ static const struct {
 	{"glTexParameterf", (void *)glTexParameterf},
 	{"glTexParameteri", (void *)glTexParameteri},
 	{"glTexSubImage2D", (void *)glTexSubImage2D},
+	{"glTexSubImage2DUnpackRow", (void *)glTexSubImage2DUnpackRow},
 	{"glTranslatef", (void *)glTranslatef},
 	{"glTranslatex", (void *)glTranslatex},
 	{"glUniform1f", (void *)glUniform1f},
