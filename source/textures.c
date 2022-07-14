@@ -806,8 +806,8 @@ void glTexSubImage2DUnpackRow(GLenum target, GLint level, GLint xoffset, GLint y
 	uint32_t orig_w = sceGxmTextureGetWidth(&target_texture->gxm_tex);
 	uint32_t orig_h = sceGxmTextureGetHeight(&target_texture->gxm_tex);
 	SceGxmTextureFormat tex_format = sceGxmTextureGetFormat(&target_texture->gxm_tex);
-	uint8_t bpp = tex_format_to_bytespp(tex_format);
-	uint32_t stride = unpack_row_length * bpp; //ALIGN(orig_w, 8) * bpp; // TODO: sould this be multiplied by bpp?????
+    uint8_t bpp = tex_format_to_bytespp(tex_format);
+	uint32_t stride = ALIGN(orig_w, 8) * bpp;
 	uint8_t *ptr = (uint8_t *)target_texture->data + xoffset * bpp + yoffset * stride;
 	uint8_t *ptr_line = ptr;
 	uint8_t data_bpp = 0;
@@ -979,27 +979,25 @@ void glTexSubImage2DUnpackRow(GLenum target, GLint level, GLint xoffset, GLint y
 			break;
 		}
 
-		if (fast_store) { // Internal format and input format are the same, we can take advantage of this
-			uint8_t *data = (uint8_t *)pixels;
-			uint32_t line_size = width * data_bpp;
-			for (i = 0; i < height; i++) {
-				vgl_fast_memcpy(ptr, data, line_size);
-				data += line_size;
-				ptr += stride;
-			}
-		} else { // Executing texture modification via callbacks
-			uint8_t *data = (uint8_t *)pixels;
-			for (i = 0; i < height; i++) {
-				for (j = 0; j < width; j++) {
-					uint32_t clr = read_cb((uint8_t *)data);
-					write_cb(ptr, clr);
-					data += data_bpp;
-					ptr += bpp;
-				}
-				ptr = ptr_line + stride;
-				ptr_line = ptr;
-			}
-		}
+        uint32_t data_stride = unpack_row_length * data_bpp;
+
+        // TODO: implement fast_store
+
+        uint8_t *data = (uint8_t *)pixels;
+        uint8_t *data_line = data;
+        for (i = 0; i < height; i++) {
+            for (j = 0; j < width; j++) {
+                uint32_t clr = read_cb((uint8_t *)data);
+                write_cb(ptr, clr);
+                data += data_bpp;
+                ptr += bpp;
+            }
+            ptr = ptr_line + stride;
+            ptr_line = ptr;
+
+            data = data_line + data_stride;
+            data_line = data;
+        }
 
 		break;
 	default:
