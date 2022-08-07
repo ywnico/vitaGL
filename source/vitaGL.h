@@ -255,6 +255,7 @@ extern "C" {
 #define GL_FUNC_REVERSE_SUBTRACT                        0x800B
 #define GL_UNSIGNED_SHORT_4_4_4_4                       0x8033
 #define GL_UNSIGNED_SHORT_5_5_5_1                       0x8034
+#define GL_UNSIGNED_INT_8_8_8_8                         0x8035
 #define GL_POLYGON_OFFSET_FILL                          0x8037
 #define GL_POLYGON_OFFSET_FACTOR                        0x8038
 #define GL_INTENSITY                                    0x8049
@@ -284,7 +285,8 @@ extern "C" {
 #define GL_NUM_EXTENSIONS                               0x821D
 #define GL_RG                                           0x8227
 #define GL_UNSIGNED_SHORT_5_6_5                         0x8363
-#define GL_UNSIGNED_SHORT_1_5_5_5_REV                   0x8367
+#define GL_UNSIGNED_SHORT_1_5_5_5_REV                   0x8366
+#define GL_UNSIGNED_INT_8_8_8_8_REV                     0x8367
 #define GL_MIRRORED_REPEAT                              0x8370
 #define GL_COMPRESSED_RGB_S3TC_DXT1_EXT                 0x83F0
 #define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT                0x83F1

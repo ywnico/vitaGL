@@ -239,6 +239,7 @@ void _glTexImage2D_FlatIMPL(texture *tex, GLint level, GLint internalFormat, GLs
 		break;
 	case GL_BGRA:
 		switch (type) {
+		case GL_UNSIGNED_INT_8_8_8_8:
 		case GL_UNSIGNED_BYTE:
 			data_bpp = 4;
 			if (internalFormat == GL_BGRA)
@@ -246,6 +247,9 @@ void _glTexImage2D_FlatIMPL(texture *tex, GLint level, GLint internalFormat, GLs
 			else
 				read_cb = readBGRA;
 			break;
+		case GL_UNSIGNED_INT_8_8_8_8_REV:
+			data_bpp = 4;
+            read_cb = readARGB;
 		case GL_UNSIGNED_SHORT_1_5_5_5_REV:
 			data_bpp = 2;
 			read_cb = readARGB1555;
@@ -256,12 +260,20 @@ void _glTexImage2D_FlatIMPL(texture *tex, GLint level, GLint internalFormat, GLs
 		break;
 	case GL_ABGR_EXT:
 		switch (type) {
+		case GL_UNSIGNED_INT_8_8_8_8:
 		case GL_UNSIGNED_BYTE:
 			data_bpp = 4;
 			if (internalFormat == GL_ABGR_EXT)
 				fast_store = GL_TRUE;
 			else
 				read_cb = readABGR;
+			break;
+		case GL_UNSIGNED_INT_8_8_8_8_REV:
+			data_bpp = 4;
+			if (internalFormat == GL_RGBA)
+				fast_store = GL_TRUE;
+			else
+				read_cb = readRGBA;
 			break;
 		default:
 			SET_GL_ERROR_WITH_VALUE(GL_INVALID_ENUM, type)
@@ -274,12 +286,20 @@ void _glTexImage2D_FlatIMPL(texture *tex, GLint level, GLint internalFormat, GLs
 			data_bpp = 8;
 			fast_store = GL_TRUE; // TODO: For now we assume half float textures are always stored with same internalformat
 			break;
+		case GL_UNSIGNED_INT_8_8_8_8:
 		case GL_UNSIGNED_BYTE:
 			data_bpp = 4;
 			if (internalFormat == GL_RGBA)
 				fast_store = GL_TRUE;
 			else
 				read_cb = readRGBA;
+			break;
+		case GL_UNSIGNED_INT_8_8_8_8_REV:
+			data_bpp = 4;
+			if (internalFormat == GL_ABGR_EXT)
+				fast_store = GL_TRUE;
+			else
+				read_cb = readABGR;
 			break;
 		case GL_UNSIGNED_SHORT_5_5_5_1:
 			data_bpp = 2;
@@ -685,9 +705,14 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 		break;
 	case GL_RGBA:
 		switch (type) {
+		case GL_UNSIGNED_INT_8_8_8_8:
 		case GL_UNSIGNED_BYTE:
 			data_bpp = 4;
 			read_cb = readRGBA;
+			break;
+		case GL_UNSIGNED_INT_8_8_8_8_REV:
+			data_bpp = 4;
+			read_cb = readABGR;
 			break;
 		case GL_UNSIGNED_SHORT_5_5_5_1:
 			data_bpp = 2;
@@ -703,9 +728,14 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 		break;
 	case GL_BGRA:
 		switch (type) {
+		case GL_UNSIGNED_INT_8_8_8_8:
 		case GL_UNSIGNED_BYTE:
 			data_bpp = 4;
 			read_cb = readBGRA;
+			break;
+		case GL_UNSIGNED_INT_8_8_8_8_REV:
+			data_bpp = 4;
+			read_cb = readARGB;
 			break;
 		case GL_UNSIGNED_SHORT_1_5_5_5_REV:
 			data_bpp = 2;
@@ -904,9 +934,14 @@ void glTexSubImage2DUnpackRow(GLenum target, GLint level, GLint xoffset, GLint y
 		break;
 	case GL_RGBA:
 		switch (type) {
+		case GL_UNSIGNED_INT_8_8_8_8:
 		case GL_UNSIGNED_BYTE:
 			data_bpp = 4;
 			read_cb = readRGBA;
+			break;
+		case GL_UNSIGNED_INT_8_8_8_8_REV:
+			data_bpp = 4;
+			read_cb = readABGR;
 			break;
 		case GL_UNSIGNED_SHORT_5_5_5_1:
 			data_bpp = 2;
@@ -922,9 +957,14 @@ void glTexSubImage2DUnpackRow(GLenum target, GLint level, GLint xoffset, GLint y
 		break;
 	case GL_BGRA:
 		switch (type) {
+		case GL_UNSIGNED_INT_8_8_8_8:
 		case GL_UNSIGNED_BYTE:
 			data_bpp = 4;
 			read_cb = readBGRA;
+			break;
+		case GL_UNSIGNED_INT_8_8_8_8_REV:
+			data_bpp = 4;
+			read_cb = readARGB;
 			break;
 		case GL_UNSIGNED_SHORT_1_5_5_5_REV:
 			data_bpp = 2;
