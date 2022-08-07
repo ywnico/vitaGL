@@ -143,6 +143,9 @@ GLboolean vglInitWithCustomSizes(int pool_size, int width, int height, int ram_p
 
 #ifndef DISABLE_ADVANCED_SHADER_CACHE
 	sceIoMkdir("ux0:data/shader_cache", 0777);
+	char fname[256];
+	sprintf(fname, "ux0:data/shader_cache/v%d", SHADER_CACHE_MAGIC);
+	sceIoMkdir(fname, 0777);
 #endif
 	// Check if framebuffer size is valid
 	GLboolean res_fallback = GL_FALSE;
@@ -212,46 +215,46 @@ GLboolean vglInitWithCustomSizes(int pool_size, int width, int height, int ram_p
 	depth_clear_indices[2] = 2;
 	depth_clear_indices[3] = 3;
 	
-	// Start the shader compiler and compile clear shaders
-	if (!is_shark_online)
-		startShaderCompiler();
-	uint32_t size = strlen(clear_v);
-	SceGxmProgram *p = shark_compile_shader_extended(clear_v, &size, SHARK_VERTEX_SHADER, compiler_opts, compiler_fastmath, compiler_fastprecision, compiler_fastint);
-	SceGxmProgram *gxm_program_clear_v = (SceGxmProgram *)vglMalloc(size);
-	vgl_fast_memcpy((void *)gxm_program_clear_v, (void *)p, size);
-	shark_clear_output();
-	size = strlen(clear_f);
-	p = shark_compile_shader_extended(clear_f, &size, SHARK_FRAGMENT_SHADER, compiler_opts, compiler_fastmath, compiler_fastprecision, compiler_fastint);
-	SceGxmProgram *gxm_program_clear_f = (SceGxmProgram *)vglMalloc(size);
-	vgl_fast_memcpy((void *)gxm_program_clear_f, (void *)p, size);
-	shark_clear_output();
+	// Compile clear shaders only if shader compiler is up
+	if (is_shark_online) {
+		uint32_t size = strlen(clear_v);
+		SceGxmProgram *p = shark_compile_shader_extended(clear_v, &size, SHARK_VERTEX_SHADER, compiler_opts, compiler_fastmath, compiler_fastprecision, compiler_fastint);
+		SceGxmProgram *gxm_program_clear_v = (SceGxmProgram *)vglMalloc(size);
+		vgl_fast_memcpy((void *)gxm_program_clear_v, (void *)p, size);
+		shark_clear_output();
+		size = strlen(clear_f);
+		p = shark_compile_shader_extended(clear_f, &size, SHARK_FRAGMENT_SHADER, compiler_opts, compiler_fastmath, compiler_fastprecision, compiler_fastint);
+		SceGxmProgram *gxm_program_clear_f = (SceGxmProgram *)vglMalloc(size);
+		vgl_fast_memcpy((void *)gxm_program_clear_f, (void *)p, size);
+		shark_clear_output();
 
-	// Clear shader register
-	sceGxmShaderPatcherRegisterProgram(gxm_shader_patcher, gxm_program_clear_v,
-		&clear_vertex_id);
-	sceGxmShaderPatcherRegisterProgram(gxm_shader_patcher, gxm_program_clear_f,
-		&clear_fragment_id);
+		// Clear shader register
+		sceGxmShaderPatcherRegisterProgram(gxm_shader_patcher, gxm_program_clear_v,
+			&clear_vertex_id);
+		sceGxmShaderPatcherRegisterProgram(gxm_shader_patcher, gxm_program_clear_f,
+			&clear_fragment_id);
 
-	const SceGxmProgram *clear_vertex_program = sceGxmShaderPatcherGetProgramFromId(clear_vertex_id);
-	const SceGxmProgram *clear_fragment_program = sceGxmShaderPatcherGetProgramFromId(clear_fragment_id);
+		const SceGxmProgram *clear_vertex_program = sceGxmShaderPatcherGetProgramFromId(clear_vertex_id);
+		const SceGxmProgram *clear_fragment_program = sceGxmShaderPatcherGetProgramFromId(clear_fragment_id);
 
-	clear_position = sceGxmProgramFindParameterByName(clear_vertex_program, "position");
-	clear_depth = sceGxmProgramFindParameterByName(clear_vertex_program, "u_clear_depth");
-	clear_color = sceGxmProgramFindParameterByName(clear_fragment_program, "u_clear_color");
+		clear_position = sceGxmProgramFindParameterByName(clear_vertex_program, "position");
+		clear_depth = sceGxmProgramFindParameterByName(clear_vertex_program, "u_clear_depth");
+		clear_color = sceGxmProgramFindParameterByName(clear_fragment_program, "u_clear_color");
 
-	patchVertexProgram(gxm_shader_patcher,
-		clear_vertex_id, NULL, 0, NULL, 0, &clear_vertex_program_patched);
-	{
-		patchFragmentProgram(gxm_shader_patcher,
-			clear_fragment_id, SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			msaa_mode, NULL, NULL,
-			&clear_fragment_program_patched);
-	}
-	{
-		patchFragmentProgram(gxm_shader_patcher,
-			clear_fragment_id, SCE_GXM_OUTPUT_REGISTER_FORMAT_HALF4,
-			msaa_mode, NULL, NULL,
-			&clear_fragment_program_float_patched);
+		patchVertexProgram(gxm_shader_patcher,
+			clear_vertex_id, NULL, 0, NULL, 0, &clear_vertex_program_patched);
+		{
+			patchFragmentProgram(gxm_shader_patcher,
+				clear_fragment_id, SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
+				msaa_mode, NULL, NULL,
+				&clear_fragment_program_patched);
+		}
+		{
+			patchFragmentProgram(gxm_shader_patcher,
+				clear_fragment_id, SCE_GXM_OUTPUT_REGISTER_FORMAT_HALF4,
+				msaa_mode, NULL, NULL,
+				&clear_fragment_program_float_patched);
+		}
 	}
 	sceGxmSetTwoSidedEnable(gxm_context, SCE_GXM_TWO_SIDED_ENABLED);
 
@@ -481,7 +484,7 @@ GLboolean vglInitWithCustomThreshold(int pool_size, int width, int height, int r
 		info.size = sizeof(SceKernelFreeMemorySizeInfo);
 		sceKernelGetFreeMemorySize(&info);
 		return vglInitWithCustomSizes(pool_size, width, height,
-			info.size_user > ram_threshold ? info.size_user - ram_threshold : info.size_user,
+			info.size_user > ram_threshold ? info.size_user - ram_threshold : 0,
 			info.size_cdram > cdram_threshold ? info.size_cdram - cdram_threshold : 0,
 			info.size_phycont > phycont_threshold ? info.size_phycont - phycont_threshold : 0,
 			SCE_KERNEL_MAX_MAIN_CDIALOG_MEM_SIZE > cdlg_threshold ? SCE_KERNEL_MAX_MAIN_CDIALOG_MEM_SIZE - cdlg_threshold : 0, msaa);

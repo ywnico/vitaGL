@@ -12,7 +12,7 @@ PREFIX  = arm-vita-eabi
 CC      = $(PREFIX)-gcc
 CXX     = $(PREFIX)-g++
 AR      = $(PREFIX)-gcc-ar
-CFLAGS  = -g -Wl,-q -O3 -ffast-math -mtune=cortex-a9 -mfpu=neon -Wno-incompatible-pointer-types
+CFLAGS  = -g -Wl,-q -O3 -ffast-math -mtune=cortex-a9 -mfpu=neon -Wno-incompatible-pointer-types -Wno-stringop-overflow
 ASFLAGS = $(CFLAGS)
 
 ifeq ($(SOFTFP_ABI),1)
@@ -25,10 +25,6 @@ endif
 
 ifeq ($(NO_TEX_COMBINER),1)
 CFLAGS += -DDISABLE_TEXTURE_COMBINER
-endif
-
-ifeq ($(NO_SHADER_CACHE),1)
-CFLAGS += -DDISABLE_ADVANCED_SHADER_CACHE
 endif
 
 ifeq ($(HAVE_SHARK_LOG),1)
@@ -83,6 +79,10 @@ ifeq ($(LOG_ERRORS),2)
 CFLAGS += -DLOG_ERRORS -DFILE_LOG
 endif
 
+ifeq ($(HAVE_WRAPPED_ALLOCATORS),1)
+CFLAGS += -DHAVE_WRAPPED_ALLOCATORS
+endif
+
 ifeq ($(HAVE_DEBUGGER),1)
 CFLAGS += -DHAVE_DEBUG_INTERFACE
 endif
@@ -121,6 +121,10 @@ endif
 
 ifeq ($(HAVE_PTHREAD),1)
 CFLAGS += -DHAVE_PTHREAD
+endif
+
+ifeq ($(SAFE_ETC1),1)
+CFLAGS += -DDISABLE_HW_ETC1
 endif
 
 CXXFLAGS  = $(CFLAGS) -fno-exceptions -std=gnu++11 -Wno-write-strings

@@ -1,10 +1,9 @@
 <p align="center"><img width="50%" height="50%" src="./vitagl.png"></p>
-vitaGL is an opensource openGL driver for PSVITA development. It acts as a wrapper between openGL and sceGxm and allows to use a subset of openGL functions with fully hardware acceleration by translating the code to sceGxm equivalent.
+vitaGL is an opensource openGL driver for PSVITA development. It acts as a wrapper between openGL and sceGxm and allows to use a subset of openGL functions with full hardware acceleration by translating the code to sceGxm equivalent.
 
 # Prerequisites
 In order to run an homebrew made with vitaGL, you are going to need libshacccg.suprx extracted and decrypted on your console. You can refer to this guide for more details about its extraction: https://samilops2.gitbook.io/vita-troubleshooting-guide/shader-compiler/extract-libshacccg.suprx<br>
 If you want your homebrew to not be hard dependant from libshacccg.suprx, you can either:
-- Stick to precompiled shaders usage only (glShaderBinary).
 - Stick to fixed function pipeline features (GL1) while using this old legacy version of the library: https://github.com/Rinnegatamante/vitaGL/tree/legacy_precompiled_ffp
 
 # Build Instructions
@@ -16,7 +15,6 @@ In order to build vitaGL use the following command: `make install`.
 `LOG_ERRORS=2` Errors will be logged to ux0:data/vitaGL.log.<br>
 `NO_DEBUG=1` Disables most of the error handling features (Faster CPU code execution but code may be non compliant to all OpenGL standards).<br>
 `NO_TEX_COMBINER=1` Disables texture combiner support (GL_COMBINE) for faster fixed function pipeline code execution.<br>
-`NO_SHADER_CACHE=1` Disables extra shader cache layer on filesystem (ux0:data/shader_cache) for fixed function pipeline.<br>
 `SOFTFP_ABI=1` Compiles the library in soft floating point compatibility mode.<br>
 `DRAW_SPEEDHACK=1` Enables faster code for draw calls. May cause crashes.<br>
 `MATH_SPEEDHACK=1` Enables faster code for matrix math calls. May cause glitches.<br>
@@ -25,12 +23,14 @@ In order to build vitaGL use the following command: `make install`.
 `HAVE_HIGH_FFP_TEXUNITS=1` Enables support for more than 2 texunits for fixed function pipeline at the cost of some performance loss.<br>
 `HAVE_DISPLAY_LISTS=1` Enables support for display lists at the cost of some performance loss.<br>
 `HAVE_UNFLIPPED_FBOS=1` Framebuffers objects won't be internally flipped to match OpenGL standards.<br>
+`SAFE_ETC1=1` Disables hardware support for ETC1 textures. Makes ETC1 textures usage less efficient but may solve glitches.<br>
 `SHARED_RENDERTARGETS=1` Makes small framebuffers objects use shared rendertargets instead of dedicated ones.<br>
 `CIRCULAR_VERTEX_POOL=1` Makes temporary data buffers being handled with a circular pool.<br>
 `HAVE_PTHREAD=1` Use pthread instead of sceKernel for starting garbage collector thread.<br>
 `SINGLE_THREADED_GC=1` Makes the garbage collector run on main thread.<br>
 `PHYCONT_ON_DEMAND=1` Makes the physically contiguous RAM be handled with separate memblocks instead of an heap.<br>
 `UNPURE_TEXTURES=1` Makes legal to upload textures without base level.<br>
+`HAVE_WRAPPED_ALLOCATORS=1` Allows usage of vgl allocators inside wrapped allocators.<br>
 `HAVE_DEBUGGER=1` Enables lightweighted on screen debugger interface.<br>
 `HAVE_DEBUGGER=2` Enables lightweighted on screen debugger interface with extra information (devkit only).<br>
 `HAVE_RAZOR=1` Enables debugging features through Razor debugger (retail and devkit compatible).<br>
@@ -87,6 +87,12 @@ Direct OpenGL Usage:<br>
 [StaticJK](https://github.com/Rinnegatamante/StaticJK) - Port of Star Wars: Jedi Academy<br>
 [Nazi Zombies Portable](https://vitadb.rinnegatamante.it/#/info/757) - Port of Nazi Zombies Portable<br>
 [Quakespasm-Spiked](https://vitadb.rinnegatamante.it/#/info/716) - Port of Quakespasm Spiked (Limit removed Quake Engine sourceport)<br>
+[Fahrenheit Vita](https://vitadb.rinnegatamante.it/#/info/835) - Port of Fahrenheit: Indigo Prophecy<br>
+[RVGL Vita](https://vitadb.rinnegatamante.it/#/info/840) - Port of RVGL<br>
+[Bugdom](https://vitadb.rinnegatamante.it/#/info/841) - Port of Bugdom<br>
+[Pekka Kana 2 Vita](https://vitadb.rinnegatamante.it/#/info/847) - Port of Pekka Kana 2<br>
+[Death Road to Canada Lite](https://vitadb.rinnegatamante.it/#/info/846) - Port of Death Road to Canada<br>
+[CrossCraft Classic](https://vitadb.rinnegatamante.it/#/info/848) - Multiplatform Minecraft Classic clone<br>
 
 Libraries:<br>
 [sdl12_gl](https://github.com/Rinnegatamante/SDL-Vita/tree/sdl12_gl/src) - SDL 1.2 Vita port adapted to work with vitaGL as renderer backend<br>

@@ -28,7 +28,7 @@ static enum {
 	GXM_FLAG_DEFAULT = 0x00,
 	GXM_FLAG_SYSAPP = 0x0A,
 	GXM_FLAG_TEXFORMAT_EXT = 0x10
-};
+} sceGxmVshInitializeFlags;
 
 // FIXME: Since we use our own default uniform buffers circular pool, fragment and vertex buffer rings can likely be reduced in size
 static uint32_t gxm_param_buf_size = SCE_GXM_DEFAULT_PARAMETER_BUFFER_SIZE; // Param buffer size for sceGxm
@@ -68,12 +68,6 @@ SceGxmContext *gxm_context; // sceGxm context instance
 GLenum vgl_error = GL_NO_ERROR; // Error returned by glGetError
 SceGxmShaderPatcher *gxm_shader_patcher; // sceGxmShaderPatcher shader patcher instance
 GLboolean is_fbo_float = GL_FALSE; // Current framebuffer mode
-
-matrix4x4 mvp_matrix; // ModelViewProjection Matrix
-matrix4x4 projection_matrix; // Projection Matrix
-matrix4x4 modelview_matrix; // ModelView Matrix
-matrix4x4 normal_matrix; // Normal Matrix
-matrix4x4 texture_matrix; // Texture Matrix
 
 int DISPLAY_WIDTH; // Display width in pixels
 int DISPLAY_HEIGHT; // Display height in pixels

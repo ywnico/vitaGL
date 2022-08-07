@@ -92,12 +92,19 @@ extern float DISPLAY_HEIGHT_FLOAT; // Display height in pixels (float)
 
 #include "utils/atitc_utils.h"
 #include "utils/eac_utils.h"
+#include "utils/etc1_utils.h"
 #include "utils/gpu_utils.h"
 #include "utils/gxm_utils.h"
 #include "utils/math_utils.h"
 #include "utils/mem_utils.h"
 
 #include "texture_callbacks.h"
+
+// Fixed-function pipeline shader cache settings
+#ifndef DISABLE_FS_SHADER_CACHE
+#define SHADER_CACHE_MAGIC 14 // This must be increased whenever ffp shader sources or shader mask/combiner mask changes
+//#define DUMP_SHADER_SOURCES // Enable this flag to dump shader sources inside shader cache
+#endif
 
 // Debug flags
 //#define DEBUG_MEMCPY // Enable this to use newlib memcpy in order to have proper trace info in coredumps
@@ -243,6 +250,10 @@ extern GLboolean prim_is_non_native; // Flag for when a primitive not supported 
 	vgl_log("%s:%d: %s set %s (%s: 0x%X)\n", __FILE__, __LINE__, __func__, #x, #y, y); \
 	vgl_error = x; \
 	return;
+#define SET_GL_ERROR_WITH_RET_AND_VALUE(x, y, z) \
+	vgl_log("%s:%d: %s set %s (%s: 0x%X)\n", __FILE__, __LINE__, __func__, #x, #z, z); \
+	vgl_error = x; \
+	return y;
 
 #ifdef LOG_ERRORS
 #define patchVertexProgram(patcher, id, attr, attr_num, stream, stream_num, prog) \
@@ -695,6 +706,7 @@ extern void *color_table; // Current in-use color table
 
 // Matrices
 extern matrix4x4 *matrix; // Current in-use matrix mode
+GLint get_gl_matrix_mode(); // Get current in-use matrix mode (for glGetIntegerv)
 
 // Miscellaneous
 extern glPhase phase; // Current drawing phase for legacy openGL
@@ -766,7 +778,7 @@ extern void *index_object;
 extern matrix4x4 mvp_matrix; // ModelViewProjection Matrix
 extern matrix4x4 projection_matrix; // Projection Matrix
 extern matrix4x4 modelview_matrix; // ModelView Matrix
-extern matrix4x4 texture_matrix; // Texture Matrix
+extern matrix4x4 texture_matrix[TEXTURE_COORDS_NUM]; // Texture Matrix
 extern matrix4x4 normal_matrix; // Normal Matrix
 extern GLboolean mvp_modified; // Check if ModelViewProjection matrix needs to be recreated
 
@@ -830,6 +842,7 @@ void validate_viewport(void); // Restores previously invalidated viewport
 /* blending.c (TODO) */
 void change_blend_factor(void); // Changes current blending settings for all used shaders
 void change_blend_mask(void); // Changes color mask when blending is disabled for all used shaders
+GLenum gxm_blend_to_gl(SceGxmBlendFactor factor); // Converts SceGxmBlendFactor to GL blend mode
 
 /* custom_shaders.c */
 void resetCustomShaders(void); // Resets custom shaders
