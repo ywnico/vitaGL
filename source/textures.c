@@ -250,6 +250,7 @@ void _glTexImage2D_FlatIMPL(texture *tex, GLint level, GLint internalFormat, GLs
 		case GL_UNSIGNED_INT_8_8_8_8:
 			data_bpp = 4;
             read_cb = readARGB;
+			break;
 		case GL_UNSIGNED_SHORT_1_5_5_5_REV:
 			data_bpp = 2;
 			read_cb = readARGB1555;
