@@ -72,7 +72,7 @@ uint32_t readARGB1555(void *data) {
 	uint8_t r, g, b, a;
 	uint8_t *dst = (uint8_t *)&clr;
 	uint8_t *src = (uint8_t *)data;
-	dst[0] = src[2];
+	dst[0] = src[0];
 	dst[1] = src[1];
 	a = convert_u16_to_u32_cspace(clr, 0, 15, 0x01);
 	r = convert_u16_to_u32_cspace(clr, 1, 11, 0x1F);
